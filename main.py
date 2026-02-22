@@ -4,6 +4,7 @@ import os
 
 app = FastAPI()
 
+ALLOWED_NUMBER = "918948329366"
 EVOLUTION_URL = os.getenv("EVOLUTION_URL")
 API_KEY = os.getenv("AUTHENTICATION_API_KEY")
 AWS_INVOKE_URL = os.getenv("AWS_INVOKE_URL")
@@ -18,11 +19,19 @@ async def webhook(request: Request):
         message = data["data"]["message"]["conversation"]
         number = data["data"]["key"]["remoteJid"]
 
+        # Extract numeric part
+        sender_number = number.split("@")[0]
+
+        # 🔒 Restrict access
+        if sender_number != ALLOWED_NUMBER:
+            print(f"Blocked message from: {sender_number}")
+            return {"status": "ignored"}
+
         response = requests.post(
             AWS_INVOKE_URL,
             json={
-            "user_id": number,
-            "message": message
+                "user_id": number,
+                "message": message
             },
             timeout=10
         )
