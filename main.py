@@ -6,6 +6,7 @@ app = FastAPI()
 
 EVOLUTION_URL = os.getenv("EVOLUTION_URL")
 API_KEY = os.getenv("AUTHENTICATION_API_KEY")
+AWS_INVOKE_URL = os.getenv("AWS_INVOKE_URL")
 INSTANCE = "primary"
 
 @app.post("/webhook")
@@ -17,7 +18,16 @@ async def webhook(request: Request):
         message = data["data"]["message"]["conversation"]
         number = data["data"]["key"]["remoteJid"]
 
-        reply = f"You said: {message}"
+        response = requests.post(
+            AWS_INVOKE_URL,
+            json={
+            "user_id": number,
+            "message": message
+            },
+            timeout=10
+        )
+
+        reply = response.json()["reply"]
 
         requests.post(
             f"{EVOLUTION_URL}/message/sendText/{INSTANCE}",
